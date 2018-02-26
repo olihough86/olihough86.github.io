@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="map[]" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="https://oliverhough.cloud/img/favicon.ico">
+    <title>Using AWS s3 Bucket Policies</title>
+    <meta name="generator" content="Hugo 0.36" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://oliverhough.cloud/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://oliverhough.cloud//css/fork-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="https://oliverhough.cloud/"><i class="fa fa-home"></i></a>
+    </div>
+    <div id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/blog/">BLOG</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="https://oliverhough.cloud/blog/using-aws-bucket-policies/">Using AWS s3 Bucket Policies</a></strong>
+          </h3>
+        </div>
+        <div class="blog-title">
+          <h4>
+          February 26, 2018
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+<h2 id="introduction">Introduction</h2>
+
+<p>If you have not been living in a dark disconnected cave for the past year, you may have noticed the growing trend of abusing badly configured Amazon s3 buckets for fun and profit. Using tools like <a href="https://github.com/eth0izzle/bucket-stream">Bucket Stream</a> and <a href="https://github.com/tomdev/teh_s3_bucketeers">Teh S3 Bucketeers</a> for a short time you&rsquo;ll see how bad the situation really is.</p>
+
+<h2 id="check-your-bucket-acl-and-bucket-policy">Check Your Bucket ACL and Bucket Policy</h2>
+
+<p>You can check your bucket ACL using the folowing command ( more info on <a href="https://aws.amazon.com/cli/">AWS CLI</a> )</p>
+
+<p><div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ aws s3api get-bucket-acl --bucket &lt;bucket name&gt;</code></pre></div>
+And your bucket policy with
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ aws s3api get-bucket-policy --bucket &lt;bucket name&gt;</code></pre></div></p>
+
+<h2 id="spotting-a-bad-acl">Spotting a Bad ACL</h2>
+
+<p>An example ACL that grants READ / WRITE otherwise known as FULL_CONTROL to anyone.</p>
+
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">    {
+      <span style="color:#ff79c6">&#34;Grantee&#34;</span>: {
+        <span style="color:#ff79c6">&#34;Type&#34;</span>: <span style="color:#f1fa8c">&#34;Group&#34;</span>,
+        <span style="color:#ff79c6">&#34;URI&#34;</span>: <span style="color:#f1fa8c">&#34;http://acs.amazonaws.com/groups/global/AllUsers&#34;</span>
+      },
+      <span style="color:#ff79c6">&#34;Permission&#34;</span>: <span style="color:#f1fa8c">&#34;FULL_CONTROL&#34;</span>
+    }</code></pre></div>
+
+<p>An example ACL that grants READ / WRITE otherwise known as FULL_CONTROL to anyone with an AWS API key for any account.
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">    {
+      <span style="color:#ff79c6">&#34;Grantee&#34;</span>: {
+        <span style="color:#ff79c6">&#34;Type&#34;</span>: <span style="color:#f1fa8c">&#34;Group&#34;</span>,
+        <span style="color:#ff79c6">&#34;URI&#34;</span>: <span style="color:#f1fa8c">&#34;http://acs.amazonaws.com/groups/global/AuthenticatedUsers&#34;</span>
+      },
+      <span style="color:#ff79c6">&#34;Permission&#34;</span>: <span style="color:#f1fa8c">&#34;FULL_CONTROL&#34;</span>
+    }</code></pre></div></p>
+
+<p>An Example ACL that grants READ / READ_ACP to anyone (READ_ACP allows the grantee to view the ACL).
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">    {
+      <span style="color:#ff79c6">&#34;Grantee&#34;</span>: {
+        <span style="color:#ff79c6">&#34;URI&#34;</span>: <span style="color:#f1fa8c">&#34;http://acs.amazonaws.com/groups/global/AllUsers&#34;</span>,
+        <span style="color:#ff79c6">&#34;Type&#34;</span>: <span style="color:#f1fa8c">&#34;Group&#34;</span>
+      },
+      <span style="color:#ff79c6">&#34;Permission&#34;</span>: <span style="color:#f1fa8c">&#34;READ&#34;</span>
+    },
+    {
+      <span style="color:#ff79c6">&#34;Grantee&#34;</span>: {
+        <span style="color:#ff79c6">&#34;URI&#34;</span>: <span style="color:#f1fa8c">&#34;http://acs.amazonaws.com/groups/global/AllUsers&#34;</span>,
+        <span style="color:#ff79c6">&#34;Type&#34;</span>: <span style="color:#f1fa8c">&#34;Group&#34;</span>
+      },
+      <span style="color:#ff79c6">&#34;Permission&#34;</span>: <span style="color:#f1fa8c">&#34;READ_ACP&#34;</span>
+    }</code></pre></div></p>
+
+<p>An Example ACL that grants WRITE / WRITE_ACP to anyone (WRITE_ACP allows the grantee to modify the ACL)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">    {
+      <span style="color:#ff79c6">&#34;Permission&#34;</span>: <span style="color:#f1fa8c">&#34;WRITE&#34;</span>,
+      <span style="color:#ff79c6">&#34;Grantee&#34;</span>: {
+        <span style="color:#ff79c6">&#34;URI&#34;</span>: <span style="color:#f1fa8c">&#34;http://acs.amazonaws.com/groups/global/AllUsers&#34;</span>,
+        <span style="color:#ff79c6">&#34;Type&#34;</span>: <span style="color:#f1fa8c">&#34;Group&#34;</span>
+      }
+    },
+    {
+      <span style="color:#ff79c6">&#34;Permission&#34;</span>: <span style="color:#f1fa8c">&#34;WRITE_ACP&#34;</span>,
+      <span style="color:#ff79c6">&#34;Grantee&#34;</span>: {
+        <span style="color:#ff79c6">&#34;URI&#34;</span>: <span style="color:#f1fa8c">&#34;http://acs.amazonaws.com/groups/global/AllUsers&#34;</span>,
+        <span style="color:#ff79c6">&#34;Type&#34;</span>: <span style="color:#f1fa8c">&#34;Group&#34;</span>
+      }</code></pre></div></p>
+
+<p>An example ACL that grants READ / READ_ACP to anyone and WRITE / WRITE_ACP to anyone with an AWS API key for any account. I see this very often as AuthenticatedUsers is often mistook as meaning authenticated with this specific account
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">    {
+      <span style="color:#ff79c6">&#34;Permission&#34;</span>: <span style="color:#f1fa8c">&#34;READ&#34;</span>,
+      <span style="color:#ff79c6">&#34;Grantee&#34;</span>: {
+        <span style="color:#ff79c6">&#34;URI&#34;</span>: <span style="color:#f1fa8c">&#34;http://acs.amazonaws.com/groups/global/AllUsers&#34;</span>,
+        <span style="color:#ff79c6">&#34;Type&#34;</span>: <span style="color:#f1fa8c">&#34;Group&#34;</span>
+      }
+    },
+    {
+      <span style="color:#ff79c6">&#34;Permission&#34;</span>: <span style="color:#f1fa8c">&#34;READ_ACP&#34;</span>,
+      <span style="color:#ff79c6">&#34;Grantee&#34;</span>: {
+        <span style="color:#ff79c6">&#34;URI&#34;</span>: <span style="color:#f1fa8c">&#34;http://acs.amazonaws.com/groups/global/AllUsers&#34;</span>,
+        <span style="color:#ff79c6">&#34;Type&#34;</span>: <span style="color:#f1fa8c">&#34;Group&#34;</span>
+      },
+      {
+      <span style="color:#ff79c6">&#34;Permission&#34;</span>: <span style="color:#f1fa8c">&#34;WRITE&#34;</span>,
+      <span style="color:#ff79c6">&#34;Grantee&#34;</span>: {
+        <span style="color:#ff79c6">&#34;URI&#34;</span>: <span style="color:#f1fa8c">&#34;http://acs.amazonaws.com/groups/global/AuthenticatedUsers&#34;</span>,
+        <span style="color:#ff79c6">&#34;Type&#34;</span>: <span style="color:#f1fa8c">&#34;Group&#34;</span>
+      },
+      {
+      <span style="color:#ff79c6">&#34;Permission&#34;</span>: <span style="color:#f1fa8c">&#34;WRITE_ACP&#34;</span>,
+      <span style="color:#ff79c6">&#34;Grantee&#34;</span>: {
+        <span style="color:#ff79c6">&#34;URI&#34;</span>: <span style="color:#f1fa8c">&#34;http://acs.amazonaws.com/groups/global/AuthenticatedUsers&#34;</span>,
+        <span style="color:#ff79c6">&#34;Type&#34;</span>: <span style="color:#f1fa8c">&#34;Group&#34;</span>
+      }</code></pre></div></p>
+
+<h2 id="creating-better-permissions-with-a-bucket-policy">Creating better permissions with a bucket policy</h2>
+
+<p>Creating a bucket policy may seem like a headache, but using the <a href="https://awspolicygen.s3.amazonaws.com/policygen.html">policy generator by Amazon</a> you can have a solid permissions scheme in minutes.</p>
+
+<h3 id="example">Example:</h3>
+
+<p>Allow anyone to download any file from the /public/ directory as long as they know the URL, do not allow public listing of object names. My example will use a bucket named &lsquo;ohtest123&rsquo;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+  <span style="color:#ff79c6">&#34;Id&#34;</span>: <span style="color:#f1fa8c">&#34;Policy123456789&#34;</span>,
+  <span style="color:#ff79c6">&#34;Version&#34;</span>: <span style="color:#f1fa8c">&#34;2012-10-17&#34;</span>,
+  <span style="color:#ff79c6">&#34;Statement&#34;</span>: [
+    {
+      <span style="color:#ff79c6">&#34;Sid&#34;</span>: <span style="color:#f1fa8c">&#34;Stmt123456789&#34;</span>,
+      <span style="color:#ff79c6">&#34;Action&#34;</span>: [
+        <span style="color:#f1fa8c">&#34;s3:GetObject&#34;</span>
+      ],
+      <span style="color:#ff79c6">&#34;Effect&#34;</span>: <span style="color:#f1fa8c">&#34;Allow&#34;</span>,
+      <span style="color:#ff79c6">&#34;Resource&#34;</span>: <span style="color:#f1fa8c">&#34;arn:aws:s3:::ohtest123/public/*&#34;</span>,
+      <span style="color:#ff79c6">&#34;Principal&#34;</span>: <span style="color:#f1fa8c">&#34;*&#34;</span>
+    }
+  ]
+}</code></pre></div></p>
+
+<p>I&rsquo;m also using the default ACL which looks like this, the default ACL allows FULL_CONTROL to your AWS account.
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+  <span style="color:#ff79c6">&#34;Grants&#34;</span>: [
+    {
+      <span style="color:#ff79c6">&#34;Permission&#34;</span>: <span style="color:#f1fa8c">&#34;FULL_CONTROL&#34;</span>,
+      <span style="color:#ff79c6">&#34;Grantee&#34;</span>: {
+        <span style="color:#ff79c6">&#34;DisplayName&#34;</span>: <span style="color:#f1fa8c">&#34;ExampleName&#34;</span>,
+        <span style="color:#ff79c6">&#34;ID&#34;</span>: <span style="color:#f1fa8c">&#34;abc123&#34;</span>,
+        <span style="color:#ff79c6">&#34;Type&#34;</span>: <span style="color:#f1fa8c">&#34;CanonicalUser&#34;</span>
+      }
+    }
+  ],
+  <span style="color:#ff79c6">&#34;Owner&#34;</span>: {
+    <span style="color:#ff79c6">&#34;DisplayName&#34;</span>: <span style="color:#f1fa8c">&#34;ExampleName&#34;</span>,
+    <span style="color:#ff79c6">&#34;ID&#34;</span>: <span style="color:#f1fa8c">&#34;abc123&#34;</span>
+  }
+}</code></pre></div>
+Now if you visit the <a href="https://ohtest123.s3-eu-west-1.amazonaws.com/public/testfile.txt">direct link to a file</a> everything goes as planned, though if you visit the <a href="https://ohtest123.s3-eu-west-1.amazonaws.com/">bucket root</a> you will get access denied. Visiting <a href="http://ohtest123.s3-eu-west-1.amazonaws.com/public/">/public</a> will prompt you to download a 0 byte file due to the quirks of s3 object storage.</p>
+
+<p>In a future article I&rsquo;ll discuss policy to allow authenticated access to objects.</p>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="https://oliverhough.cloud/js/docs.min.js"></script>
+<script src="https://oliverhough.cloud/js/main.js"></script>
+
+<script src="https://oliverhough.cloud/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>
