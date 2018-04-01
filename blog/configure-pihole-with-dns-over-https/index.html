@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="map[]" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="https://oliverhough.cloud/img/favicon.ico">
+    <title>Configure Pi-Hole with DNS Over HTTPS</title>
+    <meta name="generator" content="Hugo 0.36" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://oliverhough.cloud/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://oliverhough.cloud//css/fork-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="https://oliverhough.cloud/"><i class="fa fa-home"></i></a>
+    </div>
+    <div id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/blog/">BLOG</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="https://oliverhough.cloud/blog/configure-pihole-with-dns-over-https/">Configure Pi-Hole with DNS Over HTTPS</a></strong>
+          </h3>
+        </div>
+        <div class="blog-title">
+          <h4>
+          April 1, 2018
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+<h2 id="introduction">Introduction</h2>
+
+<p>Today CloudFlare launched 1.1.1.1, a new consumer DNS resolver that promises to respect your privacy, it also supports DNS over HTTPS! I&rsquo;m a huge fan of Pi-Hole which I use to block tracking, advertisements etc across my whole network but unfortunately Pi-Hole does not yet support DNS over HTTPS. Lucky for us CloudFlare have released a https proxy which we can use while we wait for Pi-Hole to catch up.</p>
+
+<h2 id="requirements">Requirements</h2>
+
+<ul>
+<li>A working Pi-Hole installation (<a href="https://pi-hole.net/">https://pi-hole.net/</a>)</li>
+<li>cloudflared installed (<a href="https://developers.cloudflare.com/argo-tunnel/downloads/">https://developers.cloudflare.com/argo-tunnel/downloads/</a>)</li>
+<li>Tmux / Screen</li>
+</ul>
+
+<h2 id="setup">Setup</h2>
+
+<p>Inside a tmux / screen session as root start cloudflared like so;</p>
+
+<p><div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">cloudflared proxy-dns --port <span style="color:#bd93f9">54</span> --upstream https://1.1.1.1/.well-known/dns-query --upstream https://1.0.0.1/.well-known/dns-query</code></pre></div>
+Basically all we are doing here is starting the dns/https proxy, telling it to listen on port 54 (because pihole is using 53) and passing it the upstream dns/https resolvers.</p>
+
+<p>Open /etc/dnsmasq.d/01-pihole.conf comment out the old server lines and add one for our proxy
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#6272a4">#server=8.8.8.8
+</span><span style="color:#6272a4">#server=8.8.4.4
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">server</span><span style="color:#ff79c6">=</span><span style="color:#bd93f9">127</span>.0.0.1#54</code></pre></div>
+Note that we use # and not : for the port in dnsmasq config</p>
+
+<p>Open /etc/pihole/setupVars.conf and comment out all the #PIHOLE_DNS lines, for example;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#8be9fd;font-style:italic">API_EXCLUDE_DOMAINS</span><span style="color:#ff79c6">=</span>
+<span style="color:#8be9fd;font-style:italic">API_EXCLUDE_CLIENTS</span><span style="color:#ff79c6">=</span>
+<span style="color:#8be9fd;font-style:italic">API_QUERY_LOG_SHOW</span><span style="color:#ff79c6">=</span>all
+<span style="color:#8be9fd;font-style:italic">API_PRIVACY_MODE</span><span style="color:#ff79c6">=</span><span style="color:#8be9fd;font-style:italic">true</span>
+<span style="color:#8be9fd;font-style:italic">WEBPASSWORD</span><span style="color:#ff79c6">=</span>
+<span style="color:#8be9fd;font-style:italic">PIHOLE_INTERFACE</span><span style="color:#ff79c6">=</span>ens32
+<span style="color:#8be9fd;font-style:italic">IPV4_ADDRESS</span><span style="color:#ff79c6">=</span><span style="color:#bd93f9">192</span>.168.1.39/24
+<span style="color:#8be9fd;font-style:italic">IPV6_ADDRESS</span><span style="color:#ff79c6">=</span>
+<span style="color:#8be9fd;font-style:italic">QUERY_LOGGING</span><span style="color:#ff79c6">=</span><span style="color:#8be9fd;font-style:italic">false</span>
+<span style="color:#8be9fd;font-style:italic">INSTALL_WEB</span><span style="color:#ff79c6">=</span><span style="color:#8be9fd;font-style:italic">true</span>
+<span style="color:#8be9fd;font-style:italic">LIGHTTPD_ENABLED</span><span style="color:#ff79c6">=</span><span style="color:#bd93f9">1</span>
+<span style="color:#8be9fd;font-style:italic">DNSMASQ_LISTENING</span><span style="color:#ff79c6">=</span>single
+<span style="color:#6272a4">#PIHOLE_DNS_1=8.8.8.8
+</span><span style="color:#6272a4">#PIHOLE_DNS_2=8.8.4.4
+</span><span style="color:#6272a4"></span><span style="color:#8be9fd;font-style:italic">DNS_FQDN_REQUIRED</span><span style="color:#ff79c6">=</span><span style="color:#8be9fd;font-style:italic">true</span>
+<span style="color:#8be9fd;font-style:italic">DNS_BOGUS_PRIV</span><span style="color:#ff79c6">=</span><span style="color:#8be9fd;font-style:italic">true</span>
+<span style="color:#8be9fd;font-style:italic">DNSSEC</span><span style="color:#ff79c6">=</span><span style="color:#8be9fd;font-style:italic">true</span>
+<span style="color:#8be9fd;font-style:italic">CONDITIONAL_FORWARDING</span><span style="color:#ff79c6">=</span>false</code></pre></div></p>
+
+<p>Restart dnsmasq or pihole-ftl depending on which version of Pi-Hole you are running
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">systemctl restart dnsmasq.service</code></pre></div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">systemctl restart pihole-FTL.service</code></pre></div></p>
+
+<p>Success! you should now be using DSN over HTTPS with Pi-Hole</p>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="https://oliverhough.cloud/js/docs.min.js"></script>
+<script src="https://oliverhough.cloud/js/main.js"></script>
+
+<script src="https://oliverhough.cloud/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>
