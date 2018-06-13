@@ -6,10 +6,20 @@
     <description>Recent content on Oliver Hough</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 01 Apr 2018 20:57:20 +0200</lastBuildDate>
+    <lastBuildDate>Sat, 09 Jun 2018 22:37:36 +0200</lastBuildDate>
     
 	<atom:link href="https://oliverhough.cloud/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Breach Hunting 101</title>
+      <link>https://oliverhough.cloud/blog/breach-hunting-101/</link>
+      <pubDate>Sat, 09 Jun 2018 22:37:36 +0200</pubDate>
+      
+      <guid>https://oliverhough.cloud/blog/breach-hunting-101/</guid>
+      <description>Introduction I hope this article can give you a basic introduction to the world of &amp;lsquo;breach hunting&amp;rsquo; something I have recently come to enjoy (wierd right?). This is by no means an exhaustive list of tools and methodologies but more a primer to get you going in the exhilarating world of spending hours trawling through other peoples lists, spreadsheets and datasets for the greater good.
+Searching With all the different methods I find it is more manageable to split my searches by country.</description>
+    </item>
     
     <item>
       <title>Configure Pi-Hole with DNS Over HTTPS</title>

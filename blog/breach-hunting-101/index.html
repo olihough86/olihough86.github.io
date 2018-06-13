@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="map[]" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="https://oliverhough.cloud/img/favicon.ico">
+    <title>Breach Hunting 101</title>
+    <meta name="generator" content="Hugo 0.36" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://oliverhough.cloud/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://oliverhough.cloud//css/fork-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-120604141-1', 'auto');
+ga('send', 'pageview');
+</script>
+
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="https://oliverhough.cloud/"><i class="fa fa-home"></i></a>
+    </div>
+    <div id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/blog/">BLOG</a></li>
+        
+        <li><a href="/public_key.txt">PGP KEY</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="https://oliverhough.cloud/blog/breach-hunting-101/">Breach Hunting 101</a></strong>
+          </h3>
+        </div>
+        <div class="blog-title">
+          <h4>
+          June 9, 2018
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+<h2 id="introduction">Introduction</h2>
+
+<p>I hope this article can give you a basic introduction to the world of &lsquo;breach hunting&rsquo; something I have recently come to enjoy (wierd right?). This is by no means an exhaustive list of tools and methodologies but more a primer to get you going in the exhilarating world of spending hours trawling through other peoples lists, spreadsheets and datasets for the greater good.</p>
+
+<h2 id="searching">Searching</h2>
+
+<p>With all the different methods I find it is more manageable to split my searches by country. Normally I will focus initially on the main AWS regions (IE / US / DE) then move on to the smaller AWS regions (GB / CA / AU) and finally move on to other countries (NL / SE / NO / BE / IN / JP / and many more). I often filter out CN from my results as such a high number of devices in China tends to pollute my set.</p>
+
+<p>Take a look at this ranked list of database flavours to see what is worth searching for <a href="https://db-engines.com/en/ranking/relational+dbms">https://db-engines.com/en/ranking/relational+dbms</a></p>
+
+<h3 id="shodan">Shodan</h3>
+
+<p>The most popular and well know serch engine for finding <em>things</em> rather than content. Extremely powerful search filters and well worth paying the initial fee if you don&rsquo;t have a .edu email address.</p>
+
+<p>Combine filters together to hone in on unauthenticated database web admin panels or a simple search for <code>title:&quot;index of /&quot; http.html:&quot;sql&quot;</code> will return surprising results. Limited to 200 pages of results via the web.</p>
+
+<h3 id="zoomeye">ZoomEye</h3>
+
+<p>A lesser known search engine very much like Shodan, run by Chinese security team Knownsec. Has a huge list of predefined dorks that have been submitted by users. Again very powerful search filters. As both Shodan and ZoomEye are scanning the same Internet your are going to get overlapping results, but I find as the results are ordered differently something on page 200 of Shodan might be on page 2 of ZoomEye.</p>
+
+<h3 id="google-other-regular-search-engines">Google &amp; Other Regular Search Engines</h3>
+
+<p>I wont go in to much detail here as there are many resources out there on Google dorking but it&rsquo;s safe to say that google is still a great resource to find things that shouldn&rsquo;t be there. Take the following search for example <code>inurl:gov filetype:bash_history</code></p>
+
+<h3 id="internet-wide-scan-data">Internet Wide Scan Data</h3>
+
+<p>If you can get access to regularly updated Internet wide scan data then you can start to build up your own index exposed services and run a diff on the data every few days to see if any new services have appeared online. You could also conduct your own Internet wide surveys but be warned, most networks won&rsquo;t react well to being probed you&rsquo;ll spend a lot of time answering abuse emails, don&rsquo;t do this from home you <em>will</em> end up on a blacklist</p>
+
+<h2 id="tracking-down-and-contacting-a-data-owner">Tracking Down and Contacting a Data Owner</h2>
+
+<p>OK, so you have found some juicy data and it&rsquo;s time to disclose this to the organization, but how can be be sure who actually owns this data?</p>
+
+<ul>
+<li>SSL certificates. Check other ports on the sever for HTTPS or other SSL enabled services and check the certificate name.</li>
+<li>Check to see if there are any websites listening on common web ports such as 80 / 8080.</li>
+<li>OSINT tools. Take a look at SpiderFoot for this, it will reduce your OSINT tasks to a simple button click <a href="http://www.spiderfoot.net/documentation/#api">http://www.spiderfoot.net/documentation/#api</a></li>
+<li>Check the data for clues, acronyms or a common theme.</li>
+<li>Do you see emails addresses? If you have an idea who owns this data then check some of the emails in a &lsquo;forgotten password&rsquo; process.</li>
+<li>Is SSH open on the server? check the SSH banner for a branded warning message.</li>
+<li>Troy Hunt also published this in depth article on streamlining breach disclosures <a href="https://www.troyhunt.com/streamlining-data-breach-disclosures-a-step-by-step-process">https://www.troyhunt.com/streamlining-data-breach-disclosures-a-step-by-step-process</a></li>
+</ul>
+
+<p>Once you are (mostly) certain you know who owns this data how do we go about telling them? I find that a simple short email is the best way to make initial contact. Take a look around their website for a contact email address, a general customer service / support inbox should be a last resort. Take a look in their T&amp;Cs and privacy policy for a data related contact. Also check to see if they have a VRP / bug bounty. Don&rsquo;t be scared to call them on the phone if you need to.</p>
+
+<p>I use the following template for the first email.</p>
+
+<p>SUBJECT:</p>
+
+<pre><code>Potential Data Breach  
+</code></pre>
+
+<p>CONTENT:</p>
+
+<pre><code>Please pass this email to your IT team ASAP
+
+I believe I have found an unauthenticated database instance routed to the Internet that belongs to &lt;company&gt;. The dataset contains &lt;a rough overview of the contents with disclosing any actual data&gt;
+
+Please can someone get in touch to confirm the technical details.
+
+Best Regards
+&lt;email signature&gt;
+</code></pre>
+
+<p>If this is a high priority dataset normally I&rsquo;ll send 3 emails similar to this over 3 to 5 days. If I don&rsquo;t get a response then I would consider contacting the media to help, an email from a journalist will often cause a company to jump and get things fixed.</p>
+
+<h2 id="how-to-try-to-stay-out-of-trouble">How to (try to) Stay Out Of Trouble</h2>
+
+<p>There are always going to be risks involved in this kind of work, it is up to you if you want to accept the risk. I&rsquo;m not a lawyer, this is not legal advice, though I have a few rules that I try to always follow.</p>
+
+<ul>
+<li>There is no need to download an entire dataset if you don&rsquo;t need to. Avoid copying and storing data.</li>
+<li>Only query a dataset as much as you need to investigate.</li>
+<li>Keep a log of your IP as you may need to pass it on to a companies security team so they can filter you out of their investigation.</li>
+<li>Don&rsquo;t ask for rewards / money / candy in exchange for a disclosure, this is extortion, you are a bad person.</li>
+<li>If you think a disclosure is going to pose serious legal risk to yourself, proxy through a journalist or another trusted party as a kind of loose safety net.</li>
+<li>Personally I only check for unauthenticated datasets, I don&rsquo;t test default or common passwords as this is technically hacking and thus probably illegal in most places.</li>
+</ul>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="https://oliverhough.cloud/js/docs.min.js"></script>
+<script src="https://oliverhough.cloud/js/main.js"></script>
+
+<script src="https://oliverhough.cloud/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>
