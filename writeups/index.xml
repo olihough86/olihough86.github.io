@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Writeups on Oliver Hough</title>
+    <link>https://oliverhough.cloud/writeups/</link>
+    <description>Recent content in Writeups on Oliver Hough</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 08 Jul 2018 10:23:15 +0200</lastBuildDate>
+    
+	<atom:link href="https://oliverhough.cloud/writeups/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Pinkys Palace V1</title>
+      <link>https://oliverhough.cloud/writeups/pinkys-palace-v1/</link>
+      <pubDate>Sun, 08 Jul 2018 10:23:15 +0200</pubDate>
+      
+      <guid>https://oliverhough.cloud/writeups/pinkys-palace-v1/</guid>
+      <description>Introduction Today we are going to look at how I solved the Pinky&amp;rsquo;s Palace V1 Boot2Root from VulnHub. I really enjoyed this box and would recommend it for anyone who wants to practice common exploitation methods.
+VM Info Name: Pinky&amp;rsquo;s Palace V1
+Author: @Pink_P4nther
+Link: https://www.vulnhub.com/entry/pinkys-palace-v1,225
+Difficulty: Beginner / Intermediate
+Networking: Auto DHCP (192.168.1.45)
+Discovery We begin our journey with a port scan. The VM tells us it&amp;rsquo;s IP on boot so we don&amp;rsquo;t need to go and scan our own network to find the host, in my case the IP is 192.</description>
+    </item>
+    
+  </channel>
+</rss>
