@@ -6,10 +6,19 @@
     <description>Recent content in Writeups on Oliver Hough</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 08 Jul 2018 10:23:15 +0200</lastBuildDate>
+    <lastBuildDate>Tue, 10 Jul 2018 11:30:23 +0200</lastBuildDate>
     
 	<atom:link href="https://oliverhough.cloud/writeups/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Bob C0rruptedb1t</title>
+      <link>https://oliverhough.cloud/writeups/bob-c0rruptedb1t/</link>
+      <pubDate>Tue, 10 Jul 2018 11:30:23 +0200</pubDate>
+      
+      <guid>https://oliverhough.cloud/writeups/bob-c0rruptedb1t/</guid>
+      <description>Introduction Today we are going to look at how I solved the BOB Boot2Root from C0rruptedb1t / Vulnhub. This is a fairly simple challenge as far as skill goes but it requires strong logic and problem solving skills. You really need to think outside the box with this one. I have chosen the VM from the c0rruptedb1t website as it appears to be the most up to date version.</description>
+    </item>
     
     <item>
       <title>Pinkys Palace V1</title>

