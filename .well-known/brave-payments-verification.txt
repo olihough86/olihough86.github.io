@@ -1,4 +1,0 @@
-This is a Brave Payments publisher verification file.
-
-Domain: oliverhough.cloud
-Token: 516186f6d17735221f103eb2d604742be81a14fd6f03b432169806f8e4945da9

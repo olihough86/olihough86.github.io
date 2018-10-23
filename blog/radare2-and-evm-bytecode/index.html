@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="map[]" />
+    <script type="text/javascript"> var _iub = _iub || []; _iub.csConfiguration = {"lang":"en","siteId":1309409,"consentOnScroll":false,"enableRemoteConsent":true,"cookiePolicyId":71698487}; </script><script type="text/javascript" src="//cdn.iubenda.com/cookie_solution/safemode/iubenda_cs.js" charset="UTF-8" async></script> 
+    
+    <link rel="shortcut icon" type="image/x-icon" href="https://oliverhough.cloud/img/favicon.ico">
+    <title>Radare2 and EVM Bytecode</title>
+    <meta name="generator" content="Hugo 0.36" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://oliverhough.cloud/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://oliverhough.cloud//css/fork-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-120604141-1', 'auto');
+ga('send', 'pageview');
+</script>
+
+    <meta name="twitter:site" content="@olihough86">
+    <meta name="twitter:creator" content="@olihough86">
+    
+    <meta name="twitter:description" content="Introduction In this short guide I&rsquo;m going to show you how to add support to Radare2 for EVM ASM (Ethereum Virtual Machine Assembly) so you can start reverse engineering Ethereum smart contracts. This guide is written specifically with Ubuntu Bionic in mind so package names / package managers for other Linux flavors will differ.
+Requirements  Ubuntu server or desktop is fine. sudo or root access  Installing Radare2 &#43; The EVM Plugin It is always recommended to install Radare2 from Git instead of using your package manager as Radare2 is updated very quickly." />
+    <meta name="twitter:title" content="Radare2 and EVM Bytecode" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="" /> 
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="https://oliverhough.cloud/"><i class="fa fa-home"></i></a>
+    </div>
+    <div id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/blog/"><i class='fa fa-pencil-square-o '></i>  BLOG</a></li>
+        
+        <li><a href="/writeups/"><i class='fa fa-pencil '></i>  WRITEUPS</a></li>
+        
+        <li><a href="/public_key.txt"><i class='fa fa-key-modern'></i>  PGP KEY</a></li>
+        
+        <li><a href="https://www.amazon.es/hz/wishlist/ls/1CN11PEWFIXSJ"><i class='fa fa-amazon'></i>  AMAZON WISHLIST</a></li>
+        
+        <li><a href="https://www.patreon.com/olihough86"><i class='fa fa-patreon '></i>  PATREON</a></li>
+        
+        <li><a href="https://paypal.me/olihough86"><i class='fa fa-paypal '></i>  PAYPAL</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="https://oliverhough.cloud/blog/radare2-and-evm-bytecode/">Radare2 and EVM Bytecode</a></strong>
+          </h3>
+        </div>
+        <div class="blog-title">
+          <h4>
+          October 23, 2018
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+<h2 id="introduction">Introduction</h2>
+
+<p>In this short guide I&rsquo;m going to show you how to add support to Radare2 for EVM ASM (Ethereum Virtual Machine Assembly) so you can start reverse engineering Ethereum smart contracts. This guide is written specifically with Ubuntu Bionic in mind so package names / package managers for other Linux flavors will differ.</p>
+
+<h2 id="requirements">Requirements</h2>
+
+<ul>
+<li>Ubuntu server or desktop is fine.</li>
+<li>sudo or root access</li>
+</ul>
+
+<h2 id="installing-radare2-the-evm-plugin">Installing Radare2 + The EVM Plugin</h2>
+
+<p>It is always recommended to install Radare2 from Git instead of using your package manager as Radare2 is updated very quickly. There is a joke that if your clone is 1 hour old then it is already out of date.</p>
+
+<pre><code>sudo apt-install build-essential git pkg-config
+</code></pre>
+
+<p>The above packages should be enough to get everything compiled and installed, next we clone the Radare2 repo from git and change to the new radare2/sys directory</p>
+
+<pre><code>git clone https://github.com/radare/radare2.git
+cd radare2/sys
+</code></pre>
+
+<p>There is a handy install script that will deal with the install for you, it also will deal with updating so you don&rsquo;t need to clone the repo again.</p>
+
+<pre><code>sudo ./install.sh
+</code></pre>
+
+<p>Once this has finished you have radare2 installed! Easy right? Change back to your home directory with</p>
+
+<pre><code>cd ~/
+</code></pre>
+
+<p>Now we are ready to install the EVM plugin. This does not come by default as it requires 3rd party packages which goes against the Radare2 release plan, it was moved to the radre2-extras repo which can be accessed with the r2pm tool. First we need to install a couple of extra packages</p>
+
+<pre><code>sudo apt install libjansson-dev curl4-openssl-dev
+</code></pre>
+
+<p>Now we can update r2pm and install the EVM plugin</p>
+
+<pre><code>r2pm update
+r2pm install evm
+</code></pre>
+
+<p>This will download and compile the EVM plugin which will now be available to use in Radare2</p>
+
+<h2 id="trying-out-the-plugin">Trying out the plugin</h2>
+
+<p>We can test out the EVM plugin by compiling a small example Solidity binary and opening it up in radre2. First you will need to install the Solidity compiler</p>
+
+<pre><code>sudo add-apt-repository ppa:ethereum/ethereum
+sudo apt-get update
+sudo apt-get install solc
+</code></pre>
+
+<p>Next create example1.sol with the follwing usless code</p>
+
+<pre><code>pragma solidity ^0.4.25;
+
+contract Example1 {
+    uint a = 0;
+
+    function setA(uint b) {
+        a = b + 0x42;
+    }
+}
+</code></pre>
+
+<p>and then compile it to EVM bytecode</p>
+
+<pre><code>solc ./example1.sol --bin-runtime -o ./out/
+</code></pre>
+
+<p>solc will output the bytecode in hex rather than binary as this is how it is stored on the Ethereum blockchain, we need to covert it to binary with rax2</p>
+
+<pre><code>rax2 -s &lt; ./out/Example1.bin-runtime &gt; ./out/Example1.bin-runtime.bin
+</code></pre>
+
+<p>Now finally we can open it with radre2</p>
+
+<pre><code>r2 -a evm ./out/Example1.bin-runtime.bin
+</code></pre>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+      <a href="https://www.iubenda.com/privacy-policy/71698487" class="iubenda-white iubenda-embed " title="Privacy Policy">Privacy Policy</a> <script type="text/javascript">(function (w,d) {var loader = function () {var s = d.createElement("script"), tag = d.getElementsByTagName("script")[0]; s.src="https://cdn.iubenda.com/iubenda.js"; tag.parentNode.insertBefore(s,tag);}; if(w.addEventListener){w.addEventListener("load", loader, false);}else if(w.attachEvent){w.attachEvent("onload", loader);}else{w.onload = loader;}})(window, document);</script> <a href="https://www.iubenda.com/privacy-policy/71698487/cookie-policy" class="iubenda-white iubenda-embed " title="Cookie Policy">Cookie Policy</a> <script type="text/javascript">(function (w,d) {var loader = function () {var s = d.createElement("script"), tag = d.getElementsByTagName("script")[0]; s.src="https://cdn.iubenda.com/iubenda.js"; tag.parentNode.insertBefore(s,tag);}; if(w.addEventListener){w.addEventListener("load", loader, false);}else if(w.attachEvent){w.attachEvent("onload", loader);}else{w.onload = loader;}})(window, document);</script> 
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="https://oliverhough.cloud/js/docs.min.js"></script>
+<script src="https://oliverhough.cloud/js/main.js"></script>
+
+<script src="https://oliverhough.cloud/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>
